@@ -213,18 +213,23 @@
     };
 
     let db, auth, user, currentName, collectionRef;
-    const appId = "academic-wall-bocas";
+    const appId = "mural-universitario-pitty-v1"; 
 
     async function init() {
         try {
             const app = initializeApp(firebaseConfig);
             auth = getAuth(app);
             db = getFirestore(app);
-            await signInAnonymously(auth);
+            
+            await signInAnonymously(auth).catch(err => {
+                console.error("Auth Error:", err);
+                alert("AVISO: El sistema no puede validar su conexión. Profesora María, asegúrese de que el método 'ANÓNIMO' esté ACTIVADO en su consola de Firebase.");
+            });
+
             onAuthStateChanged(auth, (u) => {
                 if(u) {
                     user = u;
-                    collectionRef = collection(db, 'artifacts', appId, 'public', 'data', 'mural_investigaciones_uni');
+                    collectionRef = collection(db, 'artifacts', appId, 'public', 'data', 'investigaciones_auditoria');
                     window.syncMural();
                 }
             });
@@ -297,7 +302,6 @@
         const btn = document.getElementById('btnSubmit');
         if(txt.length < 5) return;
 
-        // Feedback inmediato al estudiante (Pedagogía del éxito)
         const ev = runAutoEval(txt);
         showEvaluation(ev);
 
@@ -320,19 +324,43 @@
             await addDoc(collectionRef, post);
             document.getElementById('researchText').value = "";
         } catch (e) { 
-            console.error("Error crítico de Google:", e);
-            alert("AVISO DOCENTE: El aporte no se guardó en la nube. Verifique 'Dominios Autorizados' en Firebase para: mariadelcpitty-cell.github.io"); 
+            console.error(e);
+            alert("AVISO DOCENTE: El aporte no se guardó. Verifique que habilitó el método 'ANÓNIMO' y autorizó el dominio en Firebase."); 
         } finally { 
             btn.disabled = false; 
             btn.innerText = "Publicar en Mural 🚀";
         }
     };
 
-    function runAutoEval(t) {
-        const c = t.split(/\s+/).length;
-        if(c > 150) return { score: 95, tag: "Superior", feedback: "Su análisis muestra una profundidad académica excepcional y manejo de lenguaje técnico." };
-        if(c > 80) return { score: 85, tag: "Avanzado", feedback: "Buen aporte. Logra articular ideas complejas con coherencia y claridad conceptual." };
-        return { score: 60, tag: "Inicial", feedback: "La contribución es válida, pero se sugiere profundizar más en la argumentación académica." };
+    function runAutoEval(text) {
+        const words = text.toLowerCase();
+        const wordCount = text.split(/\s+/).length;
+        const basicAuditing = [
+            "revisión", "verificación", "control", "cuentas", "auditar", "auditoría",
+            "financiero", "informe", "análisis", "procesos", "evidencia", "empresa",
+            "contable", "transparencia", "objetividad", "comprobar", "examen"
+        ];
+        
+        let relevanceScore = 0;
+        basicAuditing.forEach(concept => { if (words.includes(concept)) relevanceScore += 15; });
+
+        let score = 0; let tag = ""; let feedback = "";
+
+        if (wordCount < 10) {
+            score = 20; tag = "Aporte Nulo"; feedback = "Participación demasiado breve.";
+        } else if (relevanceScore === 0) {
+            score = 30; tag = "Sin Relación"; feedback = "El contenido no guarda relación con la Auditoría básica.";
+        } else {
+            score = 60 + (relevanceScore / 5); 
+            if (wordCount > 50) score += 5;
+            if (score > 100) score = 100;
+
+            if (score >= 90) { tag = "Nivel Distinguido"; feedback = "Excelente comprensión. Sintetiza procesos de verificación con claridad."; }
+            else if (score >= 75) { tag = "Aporte Consistente"; feedback = "Buen trabajo. Identifica los elementos esenciales de forma coherente."; }
+            else if (score >= 60) { tag = "Comprensión Básica"; feedback = "Aporte pertinente. Conoce los fundamentos de la auditoría."; }
+            else { tag = "Nivel en Desarrollo"; feedback = "Se recomienda fortalecer el uso de términos básicos de la asignatura."; }
+        }
+        return { score, tag, feedback };
     }
 
     function showEvaluation(ev) {
@@ -346,13 +374,13 @@
 
     async function toggleStatus(id, s) {
         const n = s === 'pendiente' ? 'comentado' : 'pendiente';
-        await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'mural_investigaciones_uni', id), { status: n });
+        await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'investigaciones_auditoria', id), { status: n });
     }
 
     window.deletePost = async (id, e) => {
         e.stopPropagation();
         if(!confirm("¿Eliminar aporte?")) return;
-        await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'mural_investigaciones_uni', id));
+        await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'investigaciones_auditoria', id));
     };
 
     window.limpiarMural = async () => {
