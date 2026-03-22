@@ -64,7 +64,7 @@
             background: var(--uni-white); padding: 10px 5%; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; position: sticky; top: 0; z-index: 100;
         }
 
-        /* --- ENCABEZADO UNIVERSITARIO (PARA PROYECCIÓN) --- */
+        /* --- ENCABEZADO UNIVERSITARIO --- */
         .uni-header {
             text-align: center;
             padding: 20px 0;
@@ -84,7 +84,7 @@
         .editor-section { background: var(--uni-white); padding: 20px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); height: fit-content; }
         textarea { height: 250px; background: #fdfdfd; font-size: 0.95rem; }
 
-        /* --- MURAL COMPACTO --- */
+        /* --- MURAL --- */
         .mural-grid { 
             display: grid; 
             grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); 
@@ -102,14 +102,14 @@
         }
         .research-card p { 
             font-size: 0.85rem; line-height: 1.4; color: #444; margin: 0; white-space: pre-wrap;
-            overflow-wrap: break-word; word-break: break-word; /* Ajuste horizontal corregido */
+            overflow-wrap: break-word; word-break: break-word;
         }
         .card-footer { 
             margin-top: 10px; font-size: 0.7rem; color: #999; display: flex; justify-content: space-between; 
             border-top: 1px solid #eee; padding-top: 8px; overflow: hidden;
         }
 
-        /* --- ESTADOS DOCENTE CON ETIQUETAS --- */
+        /* --- ESTADOS --- */
         .card-pending { background-color: var(--pending-pink); border-color: var(--border-pink); }
         .card-done { background-color: var(--done-green); border-color: var(--border-green); }
         
@@ -125,7 +125,6 @@
         }
         .research-card:hover .btn-delete { opacity: 1; }
 
-        /* --- AUTOEVALUACIÓN MODAL --- */
         #eval-modal {
             display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 200; justify-content: center; align-items: center; backdrop-filter: blur(5px);
         }
@@ -137,7 +136,6 @@
 </head>
 <body>
 
-<!-- PANTALLA DE ACCESO -->
 <div id="login-screen">
     <div class="login-card">
         <div style="font-size: 2.5rem; margin-bottom: 15px;">🎓</div>
@@ -148,7 +146,6 @@
     </div>
 </div>
 
-<!-- VISTA ESTUDIANTE -->
 <div id="main-app">
     <nav>
         <div style="font-weight: 800; color: var(--uni-blue);">ESTACIÓN DE INVESTIGACIÓN</div>
@@ -170,7 +167,6 @@
     </div>
 </div>
 
-<!-- PANEL DOCENTE -->
 <div id="teacher-panel">
     <nav>
         <div style="font-weight: 800; color: var(--uni-accent);">PANEL DE CONTROL: PROFESORA MARÍA PITTY</div>
@@ -186,15 +182,11 @@
         <div class="header-line"></div>
     </div>
     <div style="padding: 0 5%; margin-bottom: 40px;">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-            <h2 style="margin:0; font-size:1.2rem;">Panel de Revisión Crítica</h2>
-            <div style="font-size:0.8rem; color:#94a3b8;">Haz clic en una tarjeta para marcarla como comentada</div>
-        </div>
+        <h2 style="margin:0 0 20px 0; font-size:1.2rem;">Panel de Revisión Crítica</h2>
         <div class="mural-grid" id="teacherMural"></div>
     </div>
 </div>
 
-<!-- AUTOEVALUACIÓN -->
 <div id="eval-modal">
     <div class="eval-box">
         <h2 style="margin:0; font-size:1.2rem; color:var(--uni-blue);">AUTODIAGNÓSTICO ACADÉMICO</h2>
@@ -221,7 +213,7 @@
     };
 
     let db, auth, user, currentName, collectionRef;
-    const appId = "mural-auditoria-pitty-global"; // ID unificado para evitar desconexiones entre provincias
+    const appId = "academic-wall-bocas";
 
     async function init() {
         try {
@@ -232,8 +224,7 @@
             onAuthStateChanged(auth, (u) => {
                 if(u) {
                     user = u;
-                    // Ruta de colección única y persistente
-                    collectionRef = collection(db, 'artifacts', appId, 'public', 'data', 'mural_auditoria_final');
+                    collectionRef = collection(db, 'artifacts', appId, 'public', 'data', 'mural_investigaciones_uni');
                     window.syncMural();
                 }
             });
@@ -244,14 +235,15 @@
     window.accessApp = () => {
         const raw = document.getElementById('userName').value.trim().toUpperCase();
         if(!raw) return;
-
-        // Normalización para detectar su nombre sin importar tildes
-        const norm = raw.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-        const hasM = norm.includes("MARIA");
-        const hasP = norm.includes("PITTY") || norm.includes("PITI");
         
-        if(hasM && hasP) {
+        const norm = raw.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        const hasMaria = norm.includes("MARIA");
+        const hasPitty = norm.includes("PITTY") || norm.includes("PITI");
+        const hasTitle = norm.includes("PROF") || norm.includes("DOCENTE");
+        
+        if((hasMaria && hasPitty) || (hasTitle && hasPitty)) {
             document.getElementById('login-screen').style.display = 'none';
+            document.getElementById('main-app').style.display = 'none';
             document.getElementById('teacher-panel').style.display = 'block';
             return;
         }
@@ -274,13 +266,11 @@
             posts.sort((a,b) => b.timestamp - a.timestamp);
 
             posts.forEach(data => {
-                // Vista Estudiante (Solo lectura)
                 const cs = document.createElement('div');
                 cs.className = "research-card";
                 cs.innerHTML = `<h4>${data.student}</h4><p>${data.content}</p><div class="card-footer"><span>${data.time}</span></div>`;
                 sc.appendChild(cs);
 
-                // Vista Docente (Interactiva)
                 const ct = document.createElement('div');
                 const isD = data.status === 'comentado';
                 ct.className = `research-card ${isD ? 'card-done' : 'card-pending'}`;
@@ -296,9 +286,7 @@
                         <span>${data.time}</span>
                     </div>`;
                 
-                ct.onclick = (e) => { 
-                    if(e.target.className !== 'btn-delete') toggleStatus(data.id, data.status); 
-                };
+                ct.onclick = (e) => { if(e.target.className !== 'btn-delete') toggleStatus(data.id, data.status); };
                 tc.appendChild(ct);
             });
         });
@@ -309,10 +297,13 @@
         const btn = document.getElementById('btnSubmit');
         if(txt.length < 5) return;
 
-        btn.disabled = true;
-        btn.innerText = "CONECTANDO CON SERVIDOR...";
-        
+        // Feedback inmediato al estudiante (Pedagogía del éxito)
         const ev = runAutoEval(txt);
+        showEvaluation(ev);
+
+        btn.disabled = true;
+        btn.innerText = "ENVIANDO A LA NUBE...";
+        
         const post = { 
             student: currentName, 
             content: txt, 
@@ -325,12 +316,12 @@
         };
 
         try {
+            if(!collectionRef) throw new Error("Sin conexión");
             await addDoc(collectionRef, post);
             document.getElementById('researchText').value = "";
-            showEvaluation(ev);
         } catch (e) { 
-            console.error(e);
-            alert("ERROR CRÍTICO: Google no permite el envío desde Chiriquí. Profesora María, por favor verifique que autorizó el dominio de GitHub en Firebase (Pestaña Configuración -> Dominios Autorizados)."); 
+            console.error("Error crítico de Google:", e);
+            alert("AVISO DOCENTE: El aporte no se guardó en la nube. Verifique 'Dominios Autorizados' en Firebase para: mariadelcpitty-cell.github.io"); 
         } finally { 
             btn.disabled = false; 
             btn.innerText = "Publicar en Mural 🚀";
@@ -339,9 +330,9 @@
 
     function runAutoEval(t) {
         const c = t.split(/\s+/).length;
-        if(c > 150) return { score: 95, tag: "Superior", feedback: "Nivel de análisis excepcional." };
-        if(c > 80) return { score: 85, tag: "Avanzado", feedback: "Buen aporte académico." };
-        return { score: 60, tag: "Inicial", feedback: "Su investigación requiere mayor profundidad." };
+        if(c > 150) return { score: 95, tag: "Superior", feedback: "Su análisis muestra una profundidad académica excepcional y manejo de lenguaje técnico." };
+        if(c > 80) return { score: 85, tag: "Avanzado", feedback: "Buen aporte. Logra articular ideas complejas con coherencia y claridad conceptual." };
+        return { score: 60, tag: "Inicial", feedback: "La contribución es válida, pero se sugiere profundizar más en la argumentación académica." };
     }
 
     function showEvaluation(ev) {
@@ -355,26 +346,21 @@
 
     async function toggleStatus(id, s) {
         const n = s === 'pendiente' ? 'comentado' : 'pendiente';
-        await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'mural_auditoria_final', id), { status: n });
+        await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'mural_investigaciones_uni', id), { status: n });
     }
 
     window.deletePost = async (id, e) => {
         e.stopPropagation();
-        if(!confirm("¿Eliminar este aporte definitivamente?")) return;
-        await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'mural_auditoria_final', id));
+        if(!confirm("¿Eliminar aporte?")) return;
+        await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'mural_investigaciones_uni', id));
     };
 
     window.limpiarMural = async () => {
         const btn = document.getElementById('btnLimpiarMural');
         if (btn.innerText === "Limpiar Mural") {
-            btn.innerText = "CONFIRMAR LIMPIEZA TOTAL";
+            btn.innerText = "CONFIRMAR LIMPIEZA";
             btn.style.backgroundColor = "#e74c3c";
-            setTimeout(() => { 
-                if(btn.innerText === "CONFIRMAR LIMPIEZA TOTAL") {
-                    btn.innerText = "Limpiar Mural";
-                    btn.style.backgroundColor = "var(--uni-gold)";
-                }
-            }, 5000);
+            setTimeout(() => { if(btn.innerText === "CONFIRMAR LIMPIEZA") { btn.innerText = "Limpiar Mural"; btn.style.backgroundColor = ""; } }, 5000);
             return;
         }
         try {
@@ -385,9 +371,7 @@
             await Promise.all(batch);
             btn.innerText = "MURAL LIMPIO";
             setTimeout(() => { btn.innerText = "Limpiar Mural"; btn.disabled = false; }, 2000);
-        } catch (e) { 
-            btn.innerText = "ERROR"; btn.disabled = false; 
-        }
+        } catch (e) { btn.innerText = "ERROR"; btn.disabled = false; }
     };
 </script>
 </body>
