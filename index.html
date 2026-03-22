@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Investigación Universitaria - Auditoría 1</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap');
+
+        :root {
+            --uni-blue: #1a2a6c;
+            --uni-gold: #b21f1f;
+            --uni-text: #2c3e50;
+            --uni-gray: #f4f7f6;
+            --uni-white: #ffffff;
+            --uni-accent: #3498db;
+            --pending-pink: #fff0f5; /* Rosado para por comentar */
+            --done-green: #e8f5e9;    /* Verde para comentado */
+            --border-pink: #f8bbd0;
+            --border-green: #a5d6a7;
+            --success: #27ae60;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--uni-gray);
+            color: var(--uni-text);
+            margin: 0;
+            padding: 0;
+        }
+
+        /* --- ACCESO --- */
+        #login-screen {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: linear-gradient(135deg, var(--uni-blue), #000000);
+        }
+
+        .login-card {
+            background: var(--uni-white);
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+        }
+
+        input, select, textarea {
+            width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; font-family: 'Inter', sans-serif;
+        }
+
+        .btn {
+            padding: 12px 24px; border-radius: 4px; font-weight: 700; cursor: pointer; transition: 0.3s; border: none; font-size: 0.9rem;
+        }
+        .btn-primary { background-color: var(--uni-blue); color: white; width: 100%; }
+        .btn-primary:hover { background-color: var(--uni-accent); }
+        .btn-outline { background: transparent; border: 1px solid #ccc; color: #666; }
+        .btn-outline:hover { background: #eee; }
+
+        /* --- NAVEGACIÓN --- */
+        nav {
+            background: var(--uni-white); padding: 10px 5%; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; position: sticky; top: 0; z-index: 100;
+        }
+
+        /* --- ENCABEZADO UNIVERSITARIO (PARA PROYECCIÓN) --- */
+        .uni-header {
+            text-align: center;
+            padding: 20px 0;
+            background: white;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #ddd;
+        }
+        .uni-header h1 { margin: 0; font-size: 1.4rem; color: var(--uni-blue); font-weight: 800; text-transform: uppercase; }
+        .uni-header h2 { margin: 5px 0; font-size: 1.1rem; color: #555; font-weight: 600; }
+        .uni-header h3 { margin: 0; font-size: 1rem; color: var(--uni-accent); font-weight: 700; }
+        .header-line { width: 60%; height: 2px; background: var(--uni-blue); margin: 10px auto; }
+
+        /* --- ZONA DE TRABAJO --- */
+        #main-app, #teacher-panel { display: none; }
+        .workspace { max-width: 1300px; margin: 20px auto; padding: 0 20px; display: grid; grid-template-columns: 350px 1fr; gap: 30px; }
+
+        .editor-section { background: var(--uni-white); padding: 20px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); height: fit-content; }
+        textarea { height: 250px; background: #fdfdfd; font-size: 0.95rem; }
+
+        /* --- MURAL COMPACTO --- */
+        .mural-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); 
+            gap: 15px; 
+            align-content: start;
+        }
+        
+        .research-card {
+            background: var(--uni-white); padding: 15px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border-top: 4px solid var(--uni-accent);
+            transition: 0.2s; position: relative; box-sizing: border-box;
+        }
+        .research-card h4 { 
+            margin: 0 0 8px 0; font-size: 0.85rem; color: var(--uni-blue); text-transform: uppercase; 
+            overflow-wrap: break-word; word-break: break-all; 
+        }
+        .research-card p { 
+            font-size: 0.85rem; line-height: 1.4; color: #444; margin: 0; white-space: pre-wrap;
+            overflow-wrap: break-word; word-break: break-word;
+        }
+        .card-footer { 
+            margin-top: 10px; font-size: 0.7rem; color: #999; display: flex; justify-content: space-between; 
+            border-top: 1px solid #eee; padding-top: 8px; overflow: hidden;
+        }
+
+        /* --- ESTADOS DOCENTE CON ETIQUETAS --- */
+        .card-pending { background-color: var(--pending-pink); border-color: var(--border-pink); }
+        .card-done { background-color: var(--done-green); border-color: var(--border-green); }
+        
+        .status-badge {
+            display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.65rem; font-weight: 800;
+            text-transform: uppercase; margin-bottom: 8px;
+        }
+        .badge-pending { background-color: #f8bbd0; color: #c2185b; }
+        .badge-done { background-color: #a5d6a7; color: #1b5e20; }
+
+        .btn-delete {
+            position: absolute; top: 5px; right: 5px; background: none; border: none; color: #e74c3c; cursor: pointer; font-size: 1rem; padding: 5px; opacity: 0.3; transition: 0.3s;
+        }
+        .research-card:hover .btn-delete { opacity: 1; }
+
+        /* --- AUTOEVALUACIÓN MODAL --- */
+        #eval-modal {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 200; justify-content: center; align-items: center; backdrop-filter: blur(5px);
+        }
+        .eval-box { background: var(--uni-white); padding: 30px; border-radius: 8px; max-width: 450px; width: 90%; text-align: center; }
+        .eval-score { font-size: 3.5rem; font-weight: 800; color: var(--uni-blue); margin: 15px 0; }
+
+        @media (max-width: 900px) {
+            .workspace { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- PANTALLA DE ACCESO -->
+<div id="login-screen">
+    <div class="login-card">
+        <div style="font-size: 2.5rem; margin-bottom: 15px;">🎓</div>
+        <h1 style="color: var(--uni-blue); margin:0;">MURAL ACADÉMICO</h1>
+        <p style="color:#777; font-size:0.9rem; margin-bottom:25px;">Auditoría 1</p>
+        <input type="text" id="userName" placeholder="NOMBRE Y APELLIDO" oninput="this.value = this.value.toUpperCase()">
+        <button class="btn btn-primary" onclick="accessApp()">Ingresar al Sistema</button>
+    </div>
+</div>
+
+<!-- VISTA ESTUDIANTE -->
+<div id="main-app">
+    <nav>
+        <div style="font-weight: 800; color: var(--uni-blue);">ESTACIÓN DE INVESTIGACIÓN</div>
+        <div style="display:flex; gap:10px; align-items:center;">
+            <span id="studentNameDisplay" style="font-size:0.8rem; font-weight:700;">---</span>
+            <button class="btn btn-outline" style="padding: 5px 12px;" onclick="closeSession()">Cerrar</button>
+        </div>
+    </nav>
+
+    <div class="workspace">
+        <div class="editor-section">
+            <h2 style="font-size: 1rem; margin-top:0;">MI CONTRIBUCIÓN</h2>
+            <textarea id="researchText" placeholder="Redacte o pegue su hallazgo de investigación aquí..."></textarea>
+            <button class="btn btn-primary" id="btnSubmit" onclick="sendContribution()">Publicar en Mural 🚀</button>
+        </div>
+
+        <div id="mural-view">
+            <h2 style="font-size: 1rem; margin-top:0; border-bottom: 1px solid #ddd; padding-bottom:10px;">MURAL COLABORATIVO</h2>
+            <div class="mural-grid" id="studentMural">
+                <!-- Carga dinámica -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- PANEL DOCENTE -->
+<div id="teacher-panel">
+    <nav>
+        <div style="font-weight: 800; color: var(--uni-accent);">PANEL DE CONTROL: PROFESORA MARÍA PITTY</div>
+        <div style="display:flex; gap:10px;">
+            <button class="btn" style="background-color: var(--uni-gold); color: white; width:auto; padding: 5px 20px;" id="btnLimpiarMural" onclick="limpiarMural()">Limpiar Mural</button>
+            <button class="btn btn-primary" style="width:auto; padding: 5px 20px;" onclick="closeSession()">Cerrar Sesión</button>
+        </div>
+    </nav>
+
+    <div class="uni-header">
+        <h1>Universidad de Panamá</h1>
+        <h2>Centro Regional de Bocas del Toro</h2>
+        <h3>Asignatura: Auditoría 1</h3>
+        <div class="header-line"></div>
+    </div>
+
+    <div style="padding: 0 5%; margin-bottom: 40px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+            <h2 style="margin:0; font-size:1.2rem;">Panel de Revisión Crítica</h2>
+            <div style="font-size:0.8rem; color:#94a3b8;">Haz clic en una tarjeta para marcarla como comentada</div>
+        </div>
+        <div class="mural-grid" id="teacherMural">
+            <!-- Participaciones con estados coloridos -->
+        </div>
+    </div>
+</div>
+
+<!-- AUTOEVALUACIÓN -->
+<div id="eval-modal">
+    <div class="eval-box">
+        <h2 style="margin:0; font-size:1.2rem; color:var(--uni-blue);">AUTODIAGNÓSTICO ACADÉMICO</h2>
+        <div class="eval-score" id="resScore">0%</div>
+        <div id="resTag" style="font-weight:800; text-transform:uppercase; margin-bottom:15px; color:var(--uni-accent);">---</div>
+        <p id="resFeedback" style="font-size:0.9rem; color:#666; line-height:1.5;"></p>
+        <button class="btn btn-primary" style="margin-top:20px;" onclick="closeEval()">Regresar al Mural</button>
+    </div>
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getFirestore, collection, addDoc, onSnapshot, updateDoc, deleteDoc, doc, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+    // --- CREDENCIALES ---
+    const firebaseConfig = {
+        apiKey: "AIzaSyA2FyfplS1t5UryuitHuogfUvhnEHPXa3w",
+        authDomain: "asistencia-docente-c8069.firebaseapp.com",
+        projectId: "asistencia-docente-c8069",
+        storageBucket: "asistencia-docente-c8069.firebasestorage.app",
+        messagingSenderId: "938998920332",
+        appId: "1:938998920332:web:6875436c485420f74cf7a9"
+    };
+
+    let db, auth, user, currentName, collectionRef;
+    const appId = "academic-wall-bocas";
+
+    async function init() {
+        try {
+            const app = initializeApp(firebaseConfig);
+            auth = getAuth(app);
+            db = getFirestore(app);
+            await signInAnonymously(auth);
+            onAuthStateChanged(auth, (u) => {
+                if(u) {
+                    user = u;
+                    collectionRef = collection(db, 'artifacts', appId, 'public', 'data', 'mural_investigaciones');
+                    window.syncMural();
+                }
+            });
+        } catch (e) { console.error("Error Firebase:", e); }
+    }
+    init();
+
+    window.accessApp = () => {
+        const nameInput = document.getElementById('userName').value.trim().toUpperCase();
+        if(!nameInput) return;
+
+        // Normalizar texto para ignorar tildes en la validación
+        const normalized = nameInput.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        
+        // Criterios de acceso docente flexibles: Detecta "PITTY" + variantes de título
+        const esApellido = normalized.includes("PITTY");
+        const esTitulo = normalized.includes("PROFESORA") || normalized.includes("PROFESOR") || 
+                         normalized.includes("PROFE") || normalized.includes("PROFA");
+        
+        // Acceso exclusivo para la Profesora María Pitty
+        if((esApellido && esTitulo) || normalized === "MARIA PITTY" || normalized === "MARIA PITI") {
+            document.getElementById('login-screen').style.display = 'none';
+            document.getElementById('main-app').style.display = 'none';
+            document.getElementById('teacher-panel').style.display = 'block';
+            return;
+        }
+
+        // Acceso para Estudiantes
+        currentName = nameInput;
+        document.getElementById('studentNameDisplay').innerText = currentName;
+        document.getElementById('login-screen').style.display = 'none';
+        document.getElementById('main-app').style.display = 'block';
+    };
+
+    window.closeSession = () => {
+        document.getElementById('main-app').style.display = 'none';
+        document.getElementById('teacher-panel').style.display = 'none';
+        document.getElementById('login-screen').style.display = 'flex';
+        document.getElementById('userName').value = "";
+    };
+
+    window.syncMural = () => {
+        onSnapshot(collectionRef, (snap) => {
+            const studentContainer = document.getElementById('studentMural');
+            const teacherContainer = document.getElementById('teacherMural');
+            studentContainer.innerHTML = "";
+            teacherContainer.innerHTML = "";
+            
+            let posts = [];
+            snap.forEach(d => posts.push({id: d.id, ...d.data()}));
+            posts.sort((a,b) => b.timestamp - a.timestamp);
+
+            posts.forEach(data => {
+                // Vista Estudiante
+                const cardS = document.createElement('div');
+                cardS.className = "research-card";
+                cardS.innerHTML = `
+                    <h4>${data.student}</h4>
+                    <p>${data.content}</p>
+                    <div class="card-footer"><span>ID: ${data.id.substring(0,5)}</span><span>${data.time}</span></div>
+                `;
+                studentContainer.appendChild(cardS);
+
+                // Vista Docente con mejoras de desbordamiento y estados
+                const cardT = document.createElement('div');
+                const isDone = data.status === 'comentado';
+                cardT.className = `research-card ${isDone ? 'card-done' : 'card-pending'}`;
+                cardT.style.cursor = "pointer";
+                
+                cardT.innerHTML = `
+                    <button class="btn-delete" onclick="deletePost('${data.id}', event)">✕</button>
+                    <div class="status-badge ${isDone ? 'badge-done' : 'badge-pending'}">
+                        ${isDone ? '✓ COMENTADO' : '● POR COMENTAR'}
+                    </div>
+                    <h4>${data.student}</h4>
+                    <p>${data.content}</p>
+                    <div class="card-footer">
+                        <span>ESTADO: ${isDone ? 'REVISADO' : 'PENDIENTE'}</span>
+                        <span>${data.time}</span>
+                    </div>
+                `;
+                
+                cardT.onclick = (e) => {
+                    if(e.target.className === 'btn-delete') return;
+                    toggleStatus(data.id, data.status);
+                };
+                
+                teacherContainer.appendChild(cardT);
+            });
+        });
+    };
+
+    window.sendContribution = async () => {
+        const txt = document.getElementById('researchText').value.trim();
+        const btn = document.getElementById('btnSubmit');
+        if(txt.length < 5) return;
+
+        btn.disabled = true;
+        const evaluation = runAutoEval(txt);
+
+        const newPost = {
+            student: currentName,
+            content: txt,
+            status: 'pendiente',
+            score: evaluation.score,
+            tag: evaluation.tag,
+            feedback: evaluation.feedback,
+            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            timestamp: Date.now()
+        };
+
+        try {
+            await addDoc(collectionRef, newPost);
+            document.getElementById('researchText').value = "";
+            showEvaluation(evaluation);
+        } catch (e) { console.error(e); }
+        finally { btn.disabled = false; }
+    };
+
+    function runAutoEval(text) {
+        const count = text.split(/\s+/).length;
+        if(count > 150) return { score: 95, tag: "Nivel Superior", feedback: "Su análisis muestra una profundidad académica excepcional y manejo de lenguaje técnico." };
+        if(count > 80) return { score: 85, tag: "Nivel Avanzado", feedback: "Buen aporte. Logra articular ideas complejas con coherencia y claridad conceptual." };
+        if(count > 30) return { score: 70, tag: "Nivel Intermedio", feedback: "La contribución es válida, pero se sugiere profundizar en las implicaciones del tema." };
+        return { score: 50, tag: "Nivel Inicial", feedback: "Su aporte es muy breve. El nivel universitario exige una mayor capacidad de síntesis y argumentación." };
+    }
+
+    function showEvaluation(ev) {
+        document.getElementById('resScore').innerText = ev.score + "%";
+        document.getElementById('resTag').innerText = ev.tag;
+        document.getElementById('resFeedback').innerText = ev.feedback;
+        document.getElementById('eval-modal').style.display = 'flex';
+    }
+
+    window.closeEval = () => document.getElementById('eval-modal').style.display = 'none';
+
+    async function toggleStatus(id, currentStatus) {
+        const newStatus = currentStatus === 'pendiente' ? 'comentado' : 'pendiente';
+        const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'mural_investigaciones', id);
+        await updateDoc(docRef, { status: newStatus });
+    }
+
+    window.deletePost = async (id, e) => {
+        e.stopPropagation();
+        const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'mural_investigaciones', id);
+        await deleteDoc(docRef);
+    };
+
+    window.limpiarMural = async () => {
+        const btn = document.getElementById('btnLimpiarMural');
+        if (btn.innerText === "Limpiar Mural") {
+            btn.innerText = "CONFIRMAR LIMPIEZA TOTAL";
+            btn.style.backgroundColor = "#e74c3c";
+            setTimeout(() => { 
+                if(btn.innerText === "CONFIRMAR LIMPIEZA TOTAL") {
+                    btn.innerText = "Limpiar Mural";
+                    btn.style.backgroundColor = "var(--uni-gold)";
+                }
+            }, 5000);
+            return;
+        }
+
+        try {
+            btn.innerText = "LIMPIANDO...";
+            btn.disabled = true;
+            const snapshot = await getDocs(collectionRef);
+            const batch = [];
+            snapshot.forEach((d) => batch.push(deleteDoc(d.ref)));
+            await Promise.all(batch);
+            btn.innerText = "MURAL LIMPIO";
+            btn.style.backgroundColor = "var(--success)";
+            setTimeout(() => {
+                btn.innerText = "Limpiar Mural";
+                btn.disabled = false;
+                btn.style.backgroundColor = "var(--uni-gold)";
+            }, 2000);
+        } catch (e) {
+            btn.innerText = "ERROR";
+            btn.disabled = false;
+        }
+    };
+</script>
+</body>
+</html>
