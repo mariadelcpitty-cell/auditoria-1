@@ -213,6 +213,7 @@
     };
 
     let db, auth, user, currentName, collectionRef;
+    // Bloque Modificado: Ajustado a lo que usted encontró en su base de datos
     const appId = "mural-universitario-pitty-v1"; 
 
     async function init() {
@@ -223,13 +224,14 @@
             
             await signInAnonymously(auth).catch(err => {
                 console.error("Auth Error:", err);
-                alert("AVISO: El sistema no puede validar su conexión. Profesora María, asegúrese de que el método 'ANÓNIMO' esté ACTIVADO en su consola de Firebase.");
+                alert("AVISO DE SISTEMA: El inicio de sesión anónimo falló. Verifique su consola de Firebase.");
             });
 
             onAuthStateChanged(auth, (u) => {
+                user = u;
                 if(u) {
-                    user = u;
-                    collectionRef = collection(db, 'artifacts', appId, 'public', 'data', 'investigaciones_auditoria');
+                    // Bloque Modificado: Sincronizado para guardar dentro de la carpeta principal
+                    collectionRef = collection(db, 'artifacts', appId, 'public', 'data', 'investigaciones');
                     window.syncMural();
                 }
             });
@@ -246,6 +248,7 @@
         const hasPitty = norm.includes("PITTY") || norm.includes("PITI");
         const hasTitle = norm.includes("PROF") || norm.includes("DOCENTE");
         
+        // Acceso exclusivo Docente
         if((hasMaria && hasPitty) || (hasTitle && hasPitty)) {
             document.getElementById('login-screen').style.display = 'none';
             document.getElementById('main-app').style.display = 'none';
@@ -253,6 +256,7 @@
             return;
         }
 
+        // Acceso Estudiantes
         currentName = raw;
         document.getElementById('studentNameDisplay').innerText = currentName;
         document.getElementById('login-screen').style.display = 'none';
@@ -302,12 +306,15 @@
         const btn = document.getElementById('btnSubmit');
         if(txt.length < 5) return;
 
-        const ev = runAutoEval(txt);
-        showEvaluation(ev);
+        if(!user) {
+            alert("ERROR: No se detecta conexión. Por favor recargue la página e intente de nuevo.");
+            return;
+        }
 
         btn.disabled = true;
-        btn.innerText = "ENVIANDO A LA NUBE...";
+        btn.innerText = "ENVIANDO...";
         
+        const ev = runAutoEval(txt);
         const post = { 
             student: currentName, 
             content: txt, 
@@ -320,12 +327,12 @@
         };
 
         try {
-            if(!collectionRef) throw new Error("Sin conexión");
             await addDoc(collectionRef, post);
             document.getElementById('researchText').value = "";
+            showEvaluation(ev);
         } catch (e) { 
-            console.error(e);
-            alert("AVISO DOCENTE: El aporte no se guardó. Verifique que habilitó el método 'ANÓNIMO' y autorizó el dominio en Firebase."); 
+            console.error("Error Firebase:", e);
+            alert("ERROR AL GUARDAR: Profesora, el sistema bloqueó la escritura. Debe configurar las Reglas (Rules) de Firestore para permitir la escritura a los estudiantes (allow read, write: if true;)."); 
         } finally { 
             btn.disabled = false; 
             btn.innerText = "Publicar en Mural 🚀";
@@ -335,6 +342,8 @@
     function runAutoEval(text) {
         const words = text.toLowerCase();
         const wordCount = text.split(/\s+/).length;
+        
+        // Conceptos básicos de auditoría
         const basicAuditing = [
             "revisión", "verificación", "control", "cuentas", "auditar", "auditoría",
             "financiero", "informe", "análisis", "procesos", "evidencia", "empresa",
@@ -347,16 +356,16 @@
         let score = 0; let tag = ""; let feedback = "";
 
         if (wordCount < 10) {
-            score = 20; tag = "Aporte Nulo"; feedback = "Participación demasiado breve.";
+            score = 20; tag = "Aporte Nulo"; feedback = "Su participación es demasiado breve para ser evaluada.";
         } else if (relevanceScore === 0) {
-            score = 30; tag = "Sin Relación"; feedback = "El contenido no guarda relación con la Auditoría básica.";
+            score = 30; tag = "Sin Relación"; feedback = "El contenido no guarda relación con los conceptos básicos de la Auditoría.";
         } else {
             score = 60 + (relevanceScore / 5); 
             if (wordCount > 50) score += 5;
             if (score > 100) score = 100;
 
-            if (score >= 90) { tag = "Nivel Distinguido"; feedback = "Excelente comprensión. Sintetiza procesos de verificación con claridad."; }
-            else if (score >= 75) { tag = "Aporte Consistente"; feedback = "Buen trabajo. Identifica los elementos esenciales de forma coherente."; }
+            if (score >= 90) { tag = "Nivel Distinguido"; feedback = "Excelente comprensión de los conceptos de auditoría."; }
+            else if (score >= 75) { tag = "Aporte Consistente"; feedback = "Buen trabajo. Identifica los elementos de forma coherente."; }
             else if (score >= 60) { tag = "Comprensión Básica"; feedback = "Aporte pertinente. Conoce los fundamentos de la auditoría."; }
             else { tag = "Nivel en Desarrollo"; feedback = "Se recomienda fortalecer el uso de términos básicos de la asignatura."; }
         }
@@ -374,13 +383,15 @@
 
     async function toggleStatus(id, s) {
         const n = s === 'pendiente' ? 'comentado' : 'pendiente';
-        await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'investigaciones_auditoria', id), { status: n });
+        // Bloque Modificado: Sincronizado con la nueva ruta
+        await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'investigaciones', id), { status: n });
     }
 
     window.deletePost = async (id, e) => {
         e.stopPropagation();
         if(!confirm("¿Eliminar aporte?")) return;
-        await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'investigaciones_auditoria', id));
+        // Bloque Modificado: Sincronizado con la nueva ruta
+        await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'investigaciones', id));
     };
 
     window.limpiarMural = async () => {
