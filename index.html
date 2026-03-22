@@ -150,7 +150,7 @@
     <nav>
         <div style="font-weight: 800; color: var(--uni-blue);">
             ESTACIÓN DE INVESTIGACIÓN 
-            <span style="font-size:0.65rem; background:var(--success); color:white; padding:3px 8px; border-radius:12px; margin-left:10px;">🟢 VERSIÓN 3.0</span>
+            <span style="font-size:0.65rem; background:#e74c3c; color:white; padding:3px 8px; border-radius:12px; margin-left:10px;" id="status-badge">🔴 VERSIÓN 4.0 - CONECTANDO...</span>
         </div>
         <div style="display:flex; gap:10px; align-items:center;">
             <span id="studentNameDisplay" style="font-size:0.8rem; font-weight:700;">---</span>
@@ -161,6 +161,10 @@
         <div class="editor-section">
             <h2 style="font-size: 1rem; margin-top:0;">MI CONTRIBUCIÓN</h2>
             <textarea id="researchText" placeholder="Redacte o pegue su hallazgo de investigación aquí..."></textarea>
+            
+            <!-- CONTENEDOR DE MENSAJES INBLOQUEABLES -->
+            <div id="sysMessage" style="display:none; padding:10px; border-radius:5px; margin-bottom:10px; font-weight:bold; font-size:0.85rem; text-align:center;"></div>
+            
             <button class="btn btn-primary" id="btnSubmit" onclick="sendContribution()">Publicar en Mural 🚀</button>
         </div>
         <div id="mural-view">
@@ -174,7 +178,7 @@
     <nav>
         <div style="font-weight: 800; color: var(--uni-accent);">
             PANEL DE CONTROL: PROFESORA MARÍA PITTY 
-            <span style="font-size:0.65rem; background:var(--success); color:white; padding:3px 8px; border-radius:12px; margin-left:10px;">🟢 VERSIÓN 3.0</span>
+            <span style="font-size:0.65rem; background:#e74c3c; color:white; padding:3px 8px; border-radius:12px; margin-left:10px;" id="status-badge-docente">🔴 VERSIÓN 4.0 - CONECTANDO...</span>
         </div>
         <div style="display:flex; gap:10px;">
             <button class="btn" style="background-color: var(--uni-gold); color: white; width:auto; padding: 5px 20px;" id="btnLimpiarMural" onclick="limpiarMural()">Limpiar Mural</button>
@@ -223,6 +227,16 @@
     // El ID principal que confirmamos desde su base de datos
     const appId = "mural-universitario-pitty-v1"; 
 
+    // Función para mostrar mensajes visuales inbloqueables
+    function showSysMsg(text, isError) {
+        const msgDiv = document.getElementById('sysMessage');
+        msgDiv.style.display = 'block';
+        msgDiv.style.backgroundColor = isError ? '#fadbd8' : '#d4efdf';
+        msgDiv.style.color = isError ? '#c0392b' : '#1e8449';
+        msgDiv.style.border = `1px solid ${isError ? '#e74c3c' : '#27ae60'}`;
+        msgDiv.innerText = text;
+    }
+
     async function init() {
         try {
             const app = initializeApp(firebaseConfig);
@@ -231,15 +245,24 @@
             
             await signInAnonymously(auth).catch(err => {
                 console.error("Auth Error:", err);
-                alert("AVISO DE SISTEMA: El inicio de sesión anónimo falló. Verifique su consola de Firebase.");
+                showSysMsg("⚠️ ERROR DE ACCESO: Firebase no permite conexión. Profe María: Verifique que 'Anónimo' esté habilitado.", true);
             });
 
             onAuthStateChanged(auth, (u) => {
                 user = u;
+                const b1 = document.getElementById('status-badge');
+                const b2 = document.getElementById('status-badge-docente');
+                
                 if(u) {
+                    if(b1) { b1.innerText = "🟢 V 4.0 - CONECTADO"; b1.style.background = "var(--success)"; }
+                    if(b2) { b2.innerText = "🟢 V 4.0 - CONECTADO"; b2.style.background = "var(--success)"; }
+                    
                     // La carpeta exacta donde encontramos la información
                     collectionRef = collection(db, 'artifacts', appId, 'public', 'data', 'investigaciones');
                     window.syncMural();
+                } else {
+                    if(b1) { b1.innerText = "🔴 DESCONECTADO"; }
+                    if(b2) { b2.innerText = "🔴 DESCONECTADO"; }
                 }
             });
         } catch (e) { console.error("Error Firebase:", e); }
@@ -309,10 +332,12 @@
     window.sendContribution = async () => {
         const txt = document.getElementById('researchText').value.trim();
         const btn = document.getElementById('btnSubmit');
+        document.getElementById('sysMessage').style.display = 'none'; // Ocultar mensaje previo
+        
         if(txt.length < 5) return;
 
         if(!user) {
-            alert("ERROR: No se detecta conexión con el servidor de Google. Intente refrescar la página.");
+            showSysMsg("⚠️ ERROR: No estás conectado al sistema de Google. Intenta refrescar la página.", true);
             return;
         }
 
@@ -334,10 +359,11 @@
         try {
             await addDoc(collectionRef, post);
             document.getElementById('researchText').value = "";
+            showSysMsg("✅ ¡Tu investigación fue enviada correctamente al panel de la profesora!", false);
             showEvaluation(ev);
         } catch (e) { 
             console.error("Error Firebase:", e);
-            alert("FALLO DE SEGURIDAD: Google ha rechazado el envío. Profesora, es OBLIGATORIO configurar las 'Reglas de Firestore' para permitir escritura de usuarios autenticados."); 
+            showSysMsg("❌ ERROR DE ESCRITURA: Google bloqueó tu mensaje. Profe María: Por favor verifique las 'Rules' en la base de datos de Firebase.", true);
         } finally { 
             btn.disabled = false; 
             btn.innerText = "Publicar en Mural 🚀";
